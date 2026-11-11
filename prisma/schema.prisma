@@ -1,0 +1,261 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+// User role enum: CITIZEN, GOVERNMENT OFFICER, ADMINISTRATOR
+enum Role {
+  CITIZEN
+  OFFICER
+  ADMINISTRATOR
+}
+
+model User {
+  id           String          @id @default(uuid())
+  name         String
+  email        String          @unique
+  passwordHash String
+  role         String          @default("CITIZEN") // CITIZEN | GOVERNMENT OFFICER | ADMINISTRATOR
+  phone        String?
+  address      String?
+  state        String?
+  district     String?
+  citizen      CitizenProfile?
+  officer      OfficerProfile?
+  notifications Notification[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model CitizenProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address      String?
+  state        String?
+  district     String?
+  pincode      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model OfficerProfile {
+  id           String      @id @default(uuid())
+  userId       String      @unique
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeId   String?
+  designation  String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Department {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  code             String            @unique
+  description      String?
+  contactEmail     String?
+  isStateLevel     Boolean           @default(false)
+  officers         OfficerProfile[]
+  authorities      PublicAuthority[]
+  applications     RTIApplication[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model PublicAuthority {
+  id           String          @id @default(uuid())
+  name         String
+  code         String          @unique
+  departmentId String
+  department   Department      @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  jurisdiction String?
+  applications RTIApplication[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model RTIApplication {
+  id                String                     @id @default(uuid())
+  referenceNumber   String                     @unique
+  citizenId         String
+  departmentId      String?
+  department        Department?                @relation(fields: [departmentId], references: [id])
+  publicAuthorityId String?
+  publicAuthority   PublicAuthority?           @relation(fields: [publicAuthorityId], references: [id])
+  subject           String
+  question          String
+  category          String?
+  preferredLanguage String                     @default("English")
+  status            String                     @default("Submitted")
+  deadlineDate      DateTime?
+  internalNotes     String?
+  assignedOfficerId String?
+  feePaid           Boolean                    @default(true)
+  documents         ApplicationDocument[]
+  statusHistory     ApplicationStatusHistory[]
+  aiAnalysis        AIAnalysis?
+  officialResponses OfficialResponse[]
+  appeals           Appeal[]
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  @@index([referenceNumber])
+  @@index([status])
+  @@index([citizenId])
+  @@index([departmentId])
+}
+
+model ApplicationDocument {
+  id            String         @id @default(uuid())
+  applicationId String
+  application   RTIApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fileName      String
+  fileUrl       String
+  fileType      String
+  fileSize      Int?
+  extractedText String?
+  ocrProcessed  Boolean        @default(false)
+  uploadedAt    DateTime       @default(now())
+}
+
+model ApplicationStatusHistory {
+  id            String         @id @default(uuid())
+  applicationId String
+  application   RTIApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        String
+  remarks       String?
+  updatedBy     String?
+  createdAt     DateTime       @default(now())
+}
+
+model AIAnalysis {
+  id                    String         @id @default(uuid())
+  applicationId         String         @unique
+  application           RTIApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  predictedCategory     String
+  confidence            Float
+  recommendedDepartment String
+  summary               String
+  keywords              String[]
+  reasoning             String
+  isOverridden          Boolean        @default(false)
+  overriddenBy          String?
+  createdAt             DateTime       @default(now())
+}
+
+model RTIEmbedding {
+  id                 String   @id @default(uuid())
+  applicationId      String?
+  historicalRecordId String?
+  textContent        String
+  embeddingJson      String // Serialized float array for cross-DB compatibility & vector search
+  createdAt          DateTime @default(now())
+}
+
+model HistoricalRTIRecord {
+  id               String   @id @default(uuid())
+  referenceNumber  String   @unique
+  subject          String
+  question         String
+  category         String
+  departmentName   String
+  approvedResponse String
+  legalReferences  String[]
+  keywords         String[]
+  createdAt        DateTime @default(now())
+}
+
+model OfficialResponse {
+  id                String             @id @default(uuid())
+  applicationId     String
+  application       RTIApplication     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  officerId         String
+  subject           String
+  responseText      String
+  pointWiseResponse String?
+  legalProvisions   String?
+  status            String             @default("Draft") // Draft | Approved | Sent
+  missingInfoFlag   Boolean            @default(false)
+  documents         ResponseDocument[]
+  approvedAt        DateTime?
+  sentAt            DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model ResponseDocument {
+  id                 String           @id @default(uuid())
+  officialResponseId String
+  officialResponse   OfficialResponse @relation(fields: [officialResponseId], references: [id], onDelete: Cascade)
+  fileName           String
+  fileUrl            String
+  fileType           String
+  uploadedAt         DateTime         @default(now())
+}
+
+model Appeal {
+  id                 String         @id @default(uuid())
+  appealNumber       String         @unique
+  applicationId      String
+  application        RTIApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  citizenId          String
+  groundOfAppeal     String
+  reliefSought       String?
+  status             String         @default("Submitted") // Submitted | Under Review | Hearing Scheduled | Allowed | Rejected
+  appellateOfficerId String?
+  decisionRemarks    String?
+  hearingDate        DateTime?
+  filedAt            DateTime       @default(now())
+  resolvedAt         DateTime?
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("info")
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+}
+
+model DepartmentAssignment {
+  id               String   @id @default(uuid())
+  applicationId    String
+  fromDepartmentId String?
+  toDepartmentId   String
+  assignedBy       String
+  reason           String?
+  createdAt        DateTime @default(now())
+}
+
+model SystemConfiguration {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}

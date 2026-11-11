@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #102A43;
+  --color-royal: #2563EB;
+  --color-saffron: #F59E0B;
+  --color-surface: #F4F7FB;
+}
+
+:root {
+  --navy: #102A43;
+  --royal: #2563EB;
+  --saffron: #F59E0B;
+  --background: #F4F7FB;
+  --foreground: #102A43;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+}
+
+/* Tactile 3D Spatial Depth & Perspective System */
+.perspective-1000 {
+  perspective: 1100px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.surface-3d {
+  box-shadow:
+    0 14px 34px -14px rgba(16, 42, 67, 0.16),
+    0 4px 10px -2px rgba(16, 42, 67, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.surface-3d-lg {
+  box-shadow:
+    0 26px 60px -18px rgba(16, 42, 67, 0.28),
+    0 10px 24px -8px rgba(37, 99, 235, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.tilt-3d-card {
+  position: relative;
+  transform: perspective(1100px)
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg))
+    scale3d(var(--sc, 1), var(--sc, 1), 1);
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.tilt-3d-glare {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: var(--go, 0);
+  background: radial-gradient(
+    420px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(255, 255, 255, 0.28),
+    rgba(147, 197, 253, 0.12) 40%,
+    transparent 72%
+  );
+  transition: opacity 240ms ease;
+}
+
+.tilt-3d-pop {
+  transform: translateZ(20px);
+}
+
+.hero-3d-grid {
+  background-color: #102A43;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 38px 38px;
+}
+
+.hero-3d-banner {
+  background-color: #102A43;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(105deg, #102A43 0%, #163A5F 52%, #2563EB 100%);
+  background-size: 38px 38px, 38px 38px, 100% 100%;
+}
+
+.hero-3d-banner-navy {
+  background-color: #102A43;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(105deg, #102A43 0%, #133252 55%, #1E446B 100%);
+  background-size: 38px 38px, 38px 38px, 100% 100%;
+}
+
+@keyframes float3dSlow {
+  0%,
+  100% {
+    transform: translate3d(0px, 0px, 34px);
+  }
+  50% {
+    transform: translate3d(0px, -6px, 42px);
+  }
+}
+
+@keyframes float3dReverse {
+  0%,
+  100% {
+    transform: translate3d(0px, 0px, 28px);
+  }
+  50% {
+    transform: translate3d(0px, 6px, 36px);
+  }
+}
+
+.float-3d-slow {
+  animation: float3dSlow 5.5s ease-in-out infinite;
+}
+
+.float-3d-reverse {
+  animation: float3dReverse 6.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-3d-card {
+    transform: none !important;
+    transition: none !important;
+  }
+  .float-3d-slow,
+  .float-3d-reverse {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
